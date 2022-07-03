@@ -1,6 +1,6 @@
-defmodule ElixirBank do
+defmodule Bank do
   @moduledoc """
-  Documentation for `ElixirBank`.
+  Documentation for `Bank`.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule ElixirBank do
 
   ## Examples
 
-      iex> ElixirBank.hello()
+      iex> Bank.hello()
       :world
 
   """
