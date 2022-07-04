@@ -30,6 +30,7 @@ defmodule Conta do
         de = %Conta{de | saldo: de.saldo - valor}
         para = %Conta{para | saldo: para.saldo + valor}
         contas = contas ++ [de, para]
+        Transacao.gravar("transferencia", de.usuario.email, valor, Date.utc_today(), para.usuario.email)
         File.write(@contas, :erlang.term_to_binary(contas))
     end
   end
