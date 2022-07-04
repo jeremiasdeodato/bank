@@ -1,28 +1,53 @@
 defmodule Conta do
   defstruct usuario: Usuario, saldo: 1000
+  @contas "contas.txt"
 
   def cadastrar(usuario) do
-    %__MODULE__{usuario: usuario}
+    case busca_por_email(usuario.email) do
+      nil ->
+        binary = [%__MODULE__{usuario: usuario}] ++ busca_contas()
+        |> :erlang.term_to_binary()
+        File.write(@contas, binary)
+      _ -> {:error, "Conta já cadastrada!"}
+    end
   end
 
-  def transferir(contas, de, para, valor) do
-    de = Enum.find(contas, fn conta -> conta.usuario.email == de.usuario.email end)
+  def busca_contas do
+    {:ok, binary} = File.read(@contas)
+    :erlang.binary_to_term(binary)
+  end
+
+  def busca_por_email(email), do: Enum.find(busca_contas(), &(&1.usuario.email == email))
+
+  def transferir(de, para, valor) do
+    de = busca_por_email(de)
+    para = busca_por_email(para)
 
     cond do
       valida_saldo(de.saldo, valor) -> {:error, "Saldo insuficiente!"}
       true ->
-        para = Enum.find(contas, fn conta -> conta.usuario.email == para.usuario.email end)
+        contas = Conta.deletar([de, para])
         de = %Conta{de | saldo: de.saldo - valor}
         para = %Conta{para | saldo: para.saldo + valor}
-      [de, para]
+        contas = contas ++ [de, para]
+        File.write(@contas, :erlang.term_to_binary(contas))
     end
   end
 
+  def deletar(contas_deletar) do
+    Enum.reduce(contas_deletar, busca_contas(), fn c, acc -> List.delete(acc, c)end)
+  end
+
   def sacar(conta, valor) do
+    conta = busca_por_email(conta)
+
     cond do
       valida_saldo(conta.saldo, valor) -> {:error, "Saldo insuficiente!"}
       true ->
+        contas = Conta.deletar([conta])
         conta = %Conta{conta | saldo: conta.saldo - valor}
+        contas = contas ++ [conta]
+        File.write(@contas, :erlang.term_to_binary(contas))
         {:ok, conta, "mensagem de email encaminhada"}
     end
   end
